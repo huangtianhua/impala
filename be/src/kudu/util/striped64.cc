@@ -17,7 +17,13 @@
 
 #include "kudu/util/striped64.h"
 
+#if defined(__aarch64__)
+#define _mm_free(p) free(p)
+#define _mm_malloc(a, b) malloc(a)
+#else
 #include <mm_malloc.h>
+#endif
+
 #include <unistd.h>
 
 #include <cstdlib>

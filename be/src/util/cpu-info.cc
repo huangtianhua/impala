@@ -21,6 +21,12 @@
 #include <sys/sysctl.h>
 #endif
 
+#ifdef __aarch64__
+#include <arm_neon.h>
+#else
+#include <mmintrin.h>
+#endif
+
 #include <sched.h>
 #include <stdlib.h>
 #include <unistd.h>

@@ -70,15 +70,17 @@ done
 # TODO: We should have a retry loop for every service we start.
 # Kill for a clean start.
 ${CLUSTER_BIN}/kill-hive-server.sh &> /dev/null
-
+echo "HTH have already kill hive server"
 export HIVE_METASTORE_HADOOP_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,\
 suspend=n,address=30010"
 
+echo "HTH USE_CDP_HIVE IS $USE_CDP_HIVE"
 # If this is CDP Hive we need to manually add the sentry jars in the classpath since
 # CDH Hive metastore scripts do not do so. This is currently to make sure that we can run
 # all the tests including sentry tests
 # TODO: This can be removed when we move to Ranger completely
-if [[ "$USE_CDP_HIVE" = "true" && -n "$SENTRY_HOME" ]]; then
+if [[ "$USE_CDP_HIVE" = "true" && -n "$SIENTRY_HOME" ]]; then
+  echo "HTH ENTER 1111"	
   for f in ${SENTRY_HOME}/lib/sentry-binding-hive*.jar; do
     FILE_NAME=$(basename $f)
     # exclude all the hive jars from being included in the classpath since Sentry
@@ -110,6 +112,7 @@ fi
 # some point in the future, in which case we can add this to only the
 # HS2 classpath.
 if ${USE_CDP_HIVE} ; then
+  echo "HTH ENTER USE_CDP_HIVE"
   export HADOOP_CLASSPATH=${HADOOP_CLASSPATH}:${TEZ_HOME}/*
   # This is a little hacky, but Tez bundles a bunch of junk into lib/, such
   # as extra copies of the hadoop libraries, etc, and we want to avoid conflicts.
@@ -126,6 +129,7 @@ fi
 # Add kudu-hive.jar to the Hive Metastore classpath, so that Kudu's HMS
 # plugin can be loaded.
 for file in ${IMPALA_KUDU_JAVA_HOME}/*kudu-hive*jar; do
+  echo "HTH ENTER INTO Add kudu-hive.jar"	
   export HADOOP_CLASSPATH=${HADOOP_CLASSPATH}:${file}
 done
 # Default to skip validation on Kudu tables if KUDU_SKIP_HMS_PLUGIN_VALIDATION
@@ -137,10 +141,9 @@ export KUDU_SKIP_HMS_PLUGIN_VALIDATION=${KUDU_SKIP_HMS_PLUGIN_VALIDATION:-1}
 #   -Dorg.apache.logging.log4j.simplelog.StatusLogger.level=TRACE
 HADOOP_CLIENT_OPTS="-Xmx2024m -Dhive.log.file=hive-metastore.log" hive \
   --service metastore -p $HIVE_METASTORE_PORT > ${LOGDIR}/hive-metastore.out 2>&1 &
-
 # Wait for the Metastore to come up because HiveServer2 relies on it being live.
 ${CLUSTER_BIN}/wait-for-metastore.py --transport=${METASTORE_TRANSPORT}
-
+echo "HTH after wait-for-metastore.py"
 if [ ${ONLY_METASTORE} -eq 0 ]; then
   # Starts a HiveServer2 instance on the port specified by the HIVE_SERVER2_THRIFT_PORT
   # environment variable. HADOOP_HEAPSIZE should be set to at least 2048 to avoid OOM

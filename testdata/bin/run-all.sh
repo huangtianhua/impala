@@ -53,7 +53,7 @@ popd
 echo "Starting cluster services..."
 $IMPALA_HOME/testdata/bin/run-mini-dfs.sh ${HDFS_FORMAT_CLUSTER-} 2>&1 | \
     tee ${IMPALA_CLUSTER_LOGS_DIR}/run-mini-dfs.log
-
+echo "HTH here!!!!!!"
 # Starts up a mini-cluster which includes:
 # - HDFS with 3 DNs
 # - One Yarn ResourceManager

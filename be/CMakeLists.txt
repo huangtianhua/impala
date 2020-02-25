@@ -40,8 +40,15 @@ PROJECT(ASSEMBLER)
 #  -pthread: enable multithreaded malloc
 #  -DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG: enable nanosecond precision for boost
 #  -fno-omit-frame-pointers: Keep frame pointer for functions in register
+execute_process(COMMAND uname -p OUTPUT_VARIABLE ARCH_NAME)
+if ("${ARCH_NAME}" MATCHES "aarch64")
+  #SET(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -march=armv8-a+crc -mcpu=generic+crc")
+  SET(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -march=armv8-a+crc")
+endif()
+
 SET(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -Wall -Wno-sign-compare -Wno-unknown-pragmas -pthread")
 SET(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -fno-strict-aliasing -fno-omit-frame-pointer")
+SET(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -fsigned-char")
 SET(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -std=c++14")
 SET(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -Wno-deprecated -Wno-vla")
 SET(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG")

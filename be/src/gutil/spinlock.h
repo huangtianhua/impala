@@ -75,6 +75,7 @@ class LOCKABLE SpinLock {
       SlowLock();
     }
     ANNOTATE_RWLOCK_ACQUIRED(this, 1);
+    __asm__ __volatile__ ("dmb ish" ::: "memory");
   }
 
   // Try to acquire this SpinLock without blocking and return true if the
@@ -88,6 +89,7 @@ class LOCKABLE SpinLock {
     if (res) {
       ANNOTATE_RWLOCK_ACQUIRED(this, 1);
     }
+    __asm__ __volatile__ ("dmb ish" ::: "memory");
     return res;
   }
 
@@ -104,6 +106,7 @@ class LOCKABLE SpinLock {
       // for the lock.
       SlowUnlock(wait_cycles);
     }
+    __asm__ __volatile__ ("dmb ish" ::: "memory");
   }
 
   // Determine if the lock is held.  When the lock is held by the invoking

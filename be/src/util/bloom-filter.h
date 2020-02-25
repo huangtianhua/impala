@@ -23,7 +23,9 @@
 #include <cstring>
 #include <limits>
 
+#ifndef __aarch64__
 #include <immintrin.h>
+#endif
 
 #include "common/compiler-util.h"
 #include "common/logging.h"
@@ -216,13 +218,10 @@ class BloomFilter {
   /// into and 'hash' is the value passed to Insert().
   void BucketInsert(const uint32_t bucket_idx, const uint32_t hash) noexcept;
 
+#if !defined(__aarch64__)
   /// A faster SIMD version of BucketInsert().
   void BucketInsertAVX2(const uint32_t bucket_idx, const uint32_t hash) noexcept
       __attribute__((__target__("avx2")));
-
-  /// BucketFind() and BucketFindAVX2() are just like BucketInsert() and
-  /// BucketInsertAVX2(), but for Find().
-  bool BucketFind(const uint32_t bucket_idx, const uint32_t hash) const noexcept;
   bool BucketFindAVX2(const uint32_t bucket_idx, const uint32_t hash) const noexcept
       __attribute__((__target__("avx2")));
 
@@ -230,7 +229,10 @@ class BloomFilter {
   /// with 1 single 1-bit set in each 32-bit lane.
   static inline ALWAYS_INLINE __m256i MakeMask(const uint32_t hash)
       __attribute__((__target__("avx2")));
-
+#endif
+  /// BucketFind() and BucketFindAVX2() are just like BucketInsert() and
+  /// BucketInsertAVX2(), but for Find().
+  bool BucketFind(const uint32_t bucket_idx, const uint32_t hash) const noexcept;
   int64_t directory_size() const {
     return 1uLL << (log_num_buckets_ + LOG_BUCKET_BYTE_SIZE);
   }
@@ -278,21 +280,29 @@ inline void ALWAYS_INLINE BloomFilter::Insert(const uint32_t hash) noexcept {
   DCHECK(directory_ != nullptr);
   always_false_ = false;
   const uint32_t bucket_idx = HashUtil::Rehash32to32(hash) & directory_mask_;
+#if !defined(__aarch64__)
   if (CpuInfo::IsSupported(CpuInfo::AVX2)) {
     BucketInsertAVX2(bucket_idx, hash);
   } else {
     BucketInsert(bucket_idx, hash);
   }
+#else
+  BucketInsert(bucket_idx, hash);
+#endif
 }
 
 inline bool ALWAYS_INLINE BloomFilter::Find(const uint32_t hash) const noexcept {
   if (always_false_) return false;
   DCHECK(directory_ != nullptr);
   const uint32_t bucket_idx = HashUtil::Rehash32to32(hash) & directory_mask_;
+#if !defined(__aarch64__)
   if (CpuInfo::IsSupported(CpuInfo::AVX2)) {
     return BucketFindAVX2(bucket_idx, hash);
   } else {
     return BucketFind(bucket_idx, hash);
   }
+#else
+  return BucketFind(bucket_idx, hash);
+#endif
 }
 } // namespace impala

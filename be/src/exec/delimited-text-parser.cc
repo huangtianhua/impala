@@ -22,6 +22,10 @@
 
 #include "common/names.h"
 
+#ifdef __aarch64__
+#include <arm_neon.h>
+#endif
+
 using namespace impala;
 
 template<bool DELIMITED_TUPLES>

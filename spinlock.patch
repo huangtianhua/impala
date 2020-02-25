@@ -1,0 +1,28 @@
+diff --git a/be/src/gutil/spinlock.h b/be/src/gutil/spinlock.h
+index eced3ef12..01fd22e6f 100644
+--- a/be/src/gutil/spinlock.h
++++ b/be/src/gutil/spinlock.h
+@@ -76,6 +76,7 @@ class LOCKABLE SpinLock {
+       SlowLock();
+     }
+     ANNOTATE_RWLOCK_ACQUIRED(this, 1);
++    __asm__ __volatile__ ("dmb ish" ::: "memory");
+   }
+
+   // Try to acquire this SpinLock without blocking and return true if the
+@@ -89,6 +90,7 @@ class LOCKABLE SpinLock {
+     if (res) {
+       ANNOTATE_RWLOCK_ACQUIRED(this, 1);
+     }
++    __asm__ __volatile__ ("dmb ish" ::: "memory");
+     return res;
+   }
+
+@@ -105,6 +107,7 @@ class LOCKABLE SpinLock {
+       // for the lock.
+       SlowUnlock(wait_cycles);
+     }
++    __asm__ __volatile__ ("dmb ish" ::: "memory");
+   }
+
+   // Determine if the lock is held.  When the lock is held by the invoking

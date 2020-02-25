@@ -62,6 +62,9 @@ def main():
   parser.add_argument("--test_script_output", required=True,
     help="The test filter pattern to pass to gtest to limit the set of tests run")
   args = parser.parse_args()
+  #from rpdb import Rpdb
+  #pdb = Rpdb()
+  #pdb.set_trace() 
   with open(args.test_script_output, "w") as f:
     test_exec_name = os.path.basename(args.test_script_output)
     script_header = script_header_template.format(gtest_filter=args.gtest_filter,

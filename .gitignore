@@ -17,7 +17,8 @@ bin/impala-config-local.sh
 .cdh
 .cdp
 .pep8
-
+html/
+latex/
 # distcc options
 .impala_compiler_opts*
 

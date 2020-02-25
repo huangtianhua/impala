@@ -408,15 +408,16 @@ build_all_components() {
   build_independent_targets=$2
   echo ">>> Building all components"
   generate_cmake_files $build_type
-
+  echo "HTH  222222222222222222222"
   # Force regenerating the build version and timestamp (this doesn't happen automatically
   # in incremental builds).
   $IMPALA_HOME/bin/gen_build_version.py
-
+  echo "HTH 3333333333333333333 BUILD_TESTS IS  $BUILD_TESTS"
   # If we skip specifying targets, everything we need gets built.
   local MAKE_TARGETS=""
   if [[ $BUILD_TESTS -eq 0 ]]; then
     # Specify all the non-test targets
+    echo "HTH 44444444444444444444444"
     MAKE_TARGETS="impalad statestored catalogd fesupport loggingsupport ImpalaUdf \
         udasample udfsample"
     if (( build_independent_targets )); then
@@ -426,6 +427,7 @@ build_all_components() {
       MAKE_TARGETS+=" impala-lzo"
     fi
   fi
+  echo "HTH enter into build_all_components make:  ${MAKE_CMD} -j${IMPALA_BUILD_THREADS:-4} ${IMPALA_MAKE_FLAGS} ${MAKE_TARGETS}"
   ${MAKE_CMD} -j${IMPALA_BUILD_THREADS:-4} ${IMPALA_MAKE_FLAGS} ${MAKE_TARGETS}
 }
 
@@ -455,13 +457,16 @@ generate_cmake_files() {
   else
     CMAKE_ARGS+=(-DCMAKE_TOOLCHAIN_FILE=$IMPALA_HOME/cmake_modules/toolchain.cmake)
   fi
+  echo "HTH begin to cmake: $CMAKE_ARGS"
   cmake . ${CMAKE_ARGS[@]}
+  echo "HTH end to cmake"
 }
 
 # Do any configuration of the test cluster required by the script arguments.
 # Kills any cluster processes that will need to be restarted to pick up new
 # configurations or the new build.
 reconfigure_test_cluster() {
+  echo "HTH enter insto reconfigure_test_cluster"	
   # Stop any running Impala services.
   "${IMPALA_HOME}/bin/start-impala-cluster.py" --kill --force
 
@@ -500,6 +505,7 @@ reconfigure_test_cluster() {
 
 # Starts the test cluster processes except for Impala.
 start_test_cluster_dependencies() {
+  echo "HTH enter into start_test_cluster_dependencies"
   local RUN_ALL_ARGS=""
   if [[ "$FORMAT_CLUSTER" -eq 1 ]]; then
     RUN_ALL_ARGS+=" -format"
@@ -577,13 +583,14 @@ if [[ "$BUILD_RELEASE_AND_DEBUG" -eq 1 ]]; then
   # Avoid rebuilding targets that are independent of the build type.
   build_all_components DEBUG 0
 else
+  echo "HTH begin build_all_components "
   build_all_components $CMAKE_BUILD_TYPE 1
 fi
-
+echo "HTH begin build_all_components after"
 if [[ $NEED_MINICLUSTER -eq 1 ]]; then
   reconfigure_test_cluster
 fi
-
+echo "HTH iam here!!!!"
 # If a metastore snapshot exists, load it while the cluster process are down and not
 # accessing the metastore.
 if [[ -n "$METASTORE_SNAPSHOT_FILE" ]]; then

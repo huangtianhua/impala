@@ -17,8 +17,13 @@
 
 #include "util/bit-util.h"
 
+#ifdef __aarch64__
+#include <arm_neon.h>
+#else
 #include <emmintrin.h>
 #include <immintrin.h>
+#endif
+
 #include <ostream>
 
 namespace {
@@ -139,15 +144,27 @@ void SimdByteSwap::ByteSwapScalar(const void* source, int len, void* dest) {
 // This constant is concluded from the definition of _mm_set_epi8;
 // Refer this link for more details:
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/
+#ifndef __aarch64__
 const __m128i mask128i = _mm_set_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
     13, 14, 15);
+#else
+#define int8x16_to_8x8x2(v) ((int8x8x2_t) { vget_low_s8(v), vget_high_s8(v) })
+const int8x16_t mask128i = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+#endif
+
+#ifdef __aarch64__
+inline void SimdByteSwap::ByteSwap128(const uint8_t* src, uint8_t* dst) {
+  int8x16_t data = vreinterpretq_s8_s32(vld1q_s32((int32_t *)(src)));
+  int8x16_t results = vcombine_s8(vtbl2_s8(int8x16_to_8x8x2(data),vget_low_s8(mask128i)),vtbl2_s8(int8x16_to_8x8x2(data),vget_high_s8(mask128i)));
+  vst1q_s32((int32_t*) dst, vreinterpretq_s32_s8(results));
+}
+#else
 // ByteSwap 16 bytes using SSSE3 instructions.
 __attribute__((target("ssse3")))
 inline void SimdByteSwap::ByteSwap128(const uint8_t* src, uint8_t* dst) {
   _mm_storeu_si128(reinterpret_cast<__m128i*>(dst), _mm_shuffle_epi8(
       _mm_loadu_si128(reinterpret_cast<const __m128i*>(src)), mask128i));
 }
-
 // ByteSwap 32 bytes using AVX2 instructions.
 __attribute__((target("avx2")))
 inline void SimdByteSwap::ByteSwap256(const uint8_t* src, uint8_t* dst) {
@@ -164,7 +181,7 @@ inline void SimdByteSwap::ByteSwap256(const uint8_t* src, uint8_t* dst) {
   _mm_storeu_si128(reinterpret_cast<__m128i*>(dst + 16), part1);
   _mm256_zeroupper();
 }
-
+#endif
 // Internal implementation of ByteSwapSimd
 // TEMPLATE_DATA_WIDTH: 16byte or 32byte, corresponding to SSSE3 or AVX2 routine
 // SIMD_FUNC: function pointer to ByteSwapSSE_Unit(16byte) or ByteSwapAVX_Unit(32byte)
@@ -177,12 +194,17 @@ inline void SimdByteSwap::ByteSwapSimd(const void* source, const int len, void* 
     << "Only 16 or 32 are valid for TEMPLATE_DATA_WIDTH now.";
   /// Function pointer to SIMD ByteSwap functions
   void (*bswap_fptr)(const uint8_t* src, uint8_t* dst) = NULL;
+#ifdef __aarch64__
+  if (TEMPLATE_DATA_WIDTH == 16) {
+    bswap_fptr = SimdByteSwap::ByteSwap128;
+  }
+#else
   if (TEMPLATE_DATA_WIDTH == 16) {
     bswap_fptr = SimdByteSwap::ByteSwap128;
   } else if (TEMPLATE_DATA_WIDTH == 32) {
     bswap_fptr = SimdByteSwap::ByteSwap256;
   }
-
+#endif  
   const uint8_t* src = reinterpret_cast<const uint8_t*>(source);
   uint8_t* dst = reinterpret_cast<uint8_t*>(dest);
   src += len - TEMPLATE_DATA_WIDTH;
@@ -205,7 +227,6 @@ inline void SimdByteSwap::ByteSwapSimd(const void* source, const int len, void* 
   src -= i;
   SimdByteSwap::ByteSwapScalar(src, i, dst);
 }
-
 // Explicit instantiations for ByteSwapSSE_Unit and ByteSwapAVX2_Unit
 template void SimdByteSwap::ByteSwapSimd<16>(const void* source, const int len, void* dest);
 template void SimdByteSwap::ByteSwapSimd<32>(const void* source, const int len, void* dest);
@@ -215,6 +236,13 @@ void BitUtil::ByteSwap(void* dest, const void* source, int len) {
   if (LIKELY(len < 16)) {
     SimdByteSwap::ByteSwapScalar(source, len, dest);
   } else if (len >= 32) {
+#ifdef __aarch64__
+    if (LIKELY(CpuInfo::IsSupported(CpuInfo::SSSE3))) {
+      SimdByteSwap::ByteSwapSimd<16>(source, len, dest);
+    } else {
+      SimdByteSwap::ByteSwapScalar(source, len, dest);
+    }
+#else    
     // AVX2 can only be used to process data whose size >= 32byte
     if (CpuInfo::IsSupported(CpuInfo::AVX2)) {
       SimdByteSwap::ByteSwapSimd<32>(source, len, dest);
@@ -224,6 +252,7 @@ void BitUtil::ByteSwap(void* dest, const void* source, int len) {
     } else {
       SimdByteSwap::ByteSwapScalar(source, len, dest);
     }
+#endif
   } else {
     // SSSE3 can only be used to process data whose size >= 16byte
     // 16 <= len < 32

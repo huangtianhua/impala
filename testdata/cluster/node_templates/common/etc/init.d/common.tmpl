@@ -34,6 +34,7 @@ export CATALINA_OPTS+=" -D${KILL_CLUSTER_MARKER}"
 PID_FILE="$PID_DIR/$SERVICE_NAME"
 
 function do_start {
+  echo "HTH now is do_start $1 $2"
   local CMD="$1"
   shift
   LOG_FILE="$LOG_DIR/$SERVICE_NAME.out"
@@ -44,6 +45,7 @@ function do_start {
   # Give the process some time to die... if thing go wrong it usually takes at least a
   # few seconds for the process to totallly shutdown
   sleep 5
+  echo "HTH after sleep 5 do_start $1 $2"
   if ! pid_exists $PID; then
     echo "Failed to start $SERVICE_NAME. The end of the log ($LOG_FILE) is:"
     tail -20 "$LOG_FILE"

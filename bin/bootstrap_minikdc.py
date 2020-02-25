@@ -628,6 +628,15 @@ def get_hadoop_downloads():
   # Ranger is always CDP
   cluster_components.append(CdpComponent("ranger",
                                          archive_basename_tmpl="ranger-${version}-admin"))
+
+  # llama-minikdc is used for testing and not something that Impala needs to be built
+  # against. It does not get updated very frequently unlike the other CDH components.
+  # It is stored in a special location compared to other components.
+  toolchain_host = os.environ["IMPALA_TOOLCHAIN_HOST"]
+  download_path_prefix = "https://{0}/build/cdh_components/".format(toolchain_host)
+  destination_basedir = os.environ["CDH_COMPONENTS_HOME"]
+  cluster_components += [EnvVersionedPackage("llama-minikdc", download_path_prefix,
+      destination_basedir)]
   return cluster_components
 
 
@@ -646,12 +655,14 @@ def get_kudu_downloads(use_kudu_stub):
                       "USE_CDH_KUDU=false to use the toolchain Kudu.")
         sys.exit(1)
       kudu_downloads += [CdhKudu(get_platform_release_label().cdh)]
-      # There is also a Kudu Java package.
-      kudu_downloads += [CdhKuduJava()]
     else:
-      # Toolchain Kudu includes Java artifacts.
       kudu_downloads += [ToolchainKudu()]
 
+  # Independent of the regular Kudu package, there is also a Kudu Java package. This
+  # always needs to be downloaded from the CDH components, because the toolchain
+  # does not produce the Java artifacts.
+  # TODO: Does this make any sense with the Kudu stub?
+  kudu_downloads += [CdhKuduJava()]
   return kudu_downloads
 
 
@@ -674,6 +685,7 @@ def main():
   If false, most components get the CDH versions based on the $CDH_BUILD_NUMBER.
   The exceptions are:
   - sentry (always downloaded from $IMPALA_TOOLCHAIN_HOST for a given $CDH_BUILD_NUMBER)
+  - llama-minikdc (always downloaded from $TOOLCHAIN_HOST)
   - ranger (always downloaded from $IMPALA_TOOLCHAIN_HOST for a given $CDP_BUILD_NUMBER)
   - kudu (currently always downloaded from $IMPALA_TOOLCHAIN_HOST for a given
     $CDH_BUILD_NUMBER)

@@ -756,7 +756,7 @@ under the License.
                     <include>org.eclipse.jetty:jetty-util</include>
                     <!-- Include the allowed versions specifically -->
                     <include>org.apache.hadoop:*:${hadoop.version}</include>
-                    <include>org.apache.hbase:*:${hbase.version}</include>
+		    <include>org.apache.hbase:*:${hbase.version}</include>
                     <include>org.apache.hive:*:${hive.version}</include>
                     <include>org.apache.hive:hive-storage-api:${hive.storage.api.version}</include>
                     <include>org.apache.kudu:*:${kudu.version}</include>

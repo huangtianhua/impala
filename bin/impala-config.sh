@@ -228,6 +228,7 @@ export CDP_RANGER_URL=${CDP_RANGER_URL-}
 export CDH_COMPONENTS_HOME="$IMPALA_TOOLCHAIN/cdh_components-$CDH_BUILD_NUMBER"
 export CDP_COMPONENTS_HOME="$IMPALA_TOOLCHAIN/cdp_components-$CDP_BUILD_NUMBER"
 export USE_CDP_HIVE=${USE_CDP_HIVE-false}
+export USE_CDH_HIVE=${USE_CDH_HIVE-false}
 if $USE_CDP_HIVE; then
   # When USE_CDP_HIVE is set we use the CDP hive version to build as well as deploy in
   # the minicluster
@@ -243,7 +244,8 @@ if $USE_CDP_HIVE; then
   export IMPALA_TEZ_URL=${CDP_TEZ_URL-}
   export IMPALA_KNOX_VERSION=${CDP_KNOX_VERSION}
   export HADOOP_HOME="$CDP_COMPONENTS_HOME/hadoop-${IMPALA_HADOOP_VERSION}/"
-else
+else  
+#elif $USE_CDH_HIVE; then
   # CDH hive version is used to build and deploy in minicluster when USE_CDP_HIVE is
   # false
   export CDH_MAJOR_VERSION=6
@@ -254,6 +256,12 @@ else
   export IMPALA_HBASE_VERSION=${CDH_HBASE_VERSION}
   export IMPALA_HBASE_URL=${CDH_HBASE_URL-}
   export HADOOP_HOME="$CDH_COMPONENTS_HOME/hadoop-${IMPALA_HADOOP_VERSION}/"
+#else
+  # use local hive, hadoop  
+ # export HADOOP_HOME=/home/jenkins/workspace/impala/toolchain/hadoop-3.3.0-SNAPSHOT
+  #export IMPALA_HADOOP_VERSION=${CDP_HADOOP_VERSION}
+  #export IMPALA_HBASE_VERSION=${CDP_HBASE_VERSION}
+  #export IMPALA_HBASE_URL=${CDP_HBASE_URL-}
 fi
 
 # Ranger always uses the CDP version
@@ -373,6 +381,7 @@ ${IMPALA_HIVE_VERSION}"}
   # format the metastore db everytime we switch between hive versions
   export METASTORE_DB=${METASTORE_DB-"$(cut -c-59 <<< HMS$ESCAPED_IMPALA_HOME)_cdp"}
 else
+#elif $USE_CDH_HIVE; then
   export HIVE_HOME="$CDH_COMPONENTS_HOME/hive-${IMPALA_HIVE_VERSION}"
   # Allow overriding of Hive source location in case we want to build Impala without
 # a complete Hive build.
@@ -380,6 +389,11 @@ else
   export HIVE_METASTORE_THRIFT_DIR=$HIVE_SRC_DIR/metastore/if
   export HBASE_HOME="$CDH_COMPONENTS_HOME/hbase-${IMPALA_HBASE_VERSION}/"
   export METASTORE_DB=${METASTORE_DB-$(cut -c-63 <<< HMS$ESCAPED_IMPALA_HOME)}
+#else
+ # export HIVE_HOME=/home/apache-hive-4.0.0-SNAPSHOT-bin
+  #export HIVE_SRC_DIR=/home/hive
+  #export HIVE_METASTORE_THRIFT_DIR=$HIVE_SRC_DIR/standalone-metastore/metastore-common/src/main/thrift
+  #export HBASE_HOME="$CDP_COMPONENTS_HOME/hbase-${IMPALA_HBASE_VERSION}/"
 fi
 # Set the Hive binaries in the path
 export PATH="$HIVE_HOME/bin:$PATH"

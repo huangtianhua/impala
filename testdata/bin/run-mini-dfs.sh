@@ -37,10 +37,11 @@ $IMPALA_HOME/testdata/bin/kill-mini-dfs.sh
 if $SHOULD_FORMAT; then
   $IMPALA_HOME/testdata/cluster/admin delete_data
 fi
-
+echo "HTH admin start_cluster BEGIN"
 set +e
 $IMPALA_HOME/testdata/cluster/admin start_cluster
 if [[ $? != 0 ]]; then
+  echo "HTH code is no zero!!!!!"	
   # Only issue Java version warning when running Java 7.
   $JAVA -version 2>&1 | grep -q 'java version "1.7' || exit 1
 

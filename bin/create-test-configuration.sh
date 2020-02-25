@@ -167,6 +167,8 @@ if [ $CREATE_METASTORE -eq 1 ]; then
 
   # Use schematool to initialize the metastore db schema. It detects the Hive
   # version and invokes the appropriate scripts
+  echo "HTH CLASSPATH is {$CLASSPATH}, config dir is ${CONFIG_DIR}"
+  echo "HTH IMPALA_CLUSTER_LOGS_DIR} IS ${IMPALA_CLUSTER_LOGS_DIR}"
   CLASSPATH={$CLASSPATH}:${CONFIG_DIR} ${HIVE_HOME}/bin/schematool -initSchema -dbType \
 postgres 1>${IMPALA_CLUSTER_LOGS_DIR}/schematool.log 2>&1
   # Increase the size limit of PARAM_VALUE from SERDE_PARAMS table to be able to create

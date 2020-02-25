@@ -328,7 +328,7 @@ llvm::Value* CodegenAnyVal::GetVal(const char* name) {
       // Lowered type is of form { {i8}, [15 x i8], {i128} }. Get the i128 value and
       // truncate it to the correct size. (The {i128} corresponds to the union of the
       // different width int types.)
-      uint32_t idxs[] = {2, 0};
+      uint32_t idxs[] = {1, 0};
       llvm::Value* val = builder_->CreateExtractValue(value_, idxs, name);
       return builder_->CreateTrunc(val,
           codegen_->GetSlotType(type_), name);
@@ -374,7 +374,7 @@ void CodegenAnyVal::SetVal(llvm::Value* val) {
       // 'val'. (The {i128} corresponds to the union of the different width int types.)
       DCHECK_EQ(val->getType()->getIntegerBitWidth(), type_.GetByteSize() * 8);
       val = builder_->CreateSExt(val, llvm::Type::getIntNTy(codegen_->context(), 128));
-      uint32_t idxs[] = {2, 0};
+      uint32_t idxs[] = {1, 0};
       value_ = builder_->CreateInsertValue(value_, val, idxs, name_);
       break;
     }

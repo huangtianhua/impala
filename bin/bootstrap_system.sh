@@ -330,7 +330,7 @@ then
   sudo -u postgres psql -c "CREATE ROLE hiveuser LOGIN PASSWORD 'password';"
 fi
 sudo -u postgres psql -c "ALTER ROLE hiveuser WITH CREATEDB;"
-sudo -u postgres psql -c "SELECT * FROM pg_roles WHERE rolname = 'hiveuser';"
+sudo -u postgres psql -c "SELECT count(*) FROM pg_roles WHERE rolname = 'hiveuser';"
 
 # Setup ssh to ssh to localhost
 mkdir -p ~/.ssh

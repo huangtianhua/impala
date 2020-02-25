@@ -14,28 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-#ifdef __aarch64__
-#include "util/sse2neon.h"
-#else
-#include <emmintrin.h>
-#endif
 
 #include "util/bloom-filter.h"
 
-#include <math.h>
-#include <string.h>
-
-#include <cmath>
-#include <cstdint>
-#include <memory>
-#include <ostream>
-
-#include "gen-cpp/data_stream_service.pb.h"
 #include "kudu/rpc/rpc_controller.h"
 #include "kudu/rpc/rpc_sidecar.h"
-#include "kudu/util/slice.h"
-#include "kudu/util/status.h"
 #include "runtime/exec-env.h"
+#include "runtime/runtime-state.h"
 
 using namespace std;
 
@@ -265,9 +250,10 @@ void OrEqualArray(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict_
     }
   }
 #else
-  const __m128i* simd_in = reinterpret_cast<const __m128i*>(in);
-  const __m128i* const simd_in_end = reinterpret_cast<const __m128i*>(in + n);
-  __m128i* simd_out = reinterpret_cast<__m128i*>(out);
+  const __m128i* simd_in = reinterpret_cast<const __m128i*>(&in.directory[0]);
+  const __m128i* const simd_in_end =
+      reinterpret_cast<const __m128i*>(&in.directory[0] + in.directory.size());
+  __m128i* simd_out = reinterpret_cast<__m128i*>(&out->directory[0]);
   // in.directory has a size (in bytes) that is a multiple of 32. Since sizeof(__m128i)
   // == 16, we can do two _mm_or_si128's in each iteration without checking array
   // bounds.

@@ -15,7 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#ifndef __aarch64__
 #include <immintrin.h>
+#endif
+
 #include <stdlib.h>
 
 #include <algorithm>

@@ -84,6 +84,8 @@
 #include "gutil/atomicops-internals-powerpc.h"
 #elif defined(OS_WINDOWS)
 #include "gutil/atomicops-internals-windows.h"
+#elif defined(__aarch64__)
+#include "gutil/atomicops-internals-arm64.h"
 #else
 #error You need to implement atomic operations for this architecture
 #endif

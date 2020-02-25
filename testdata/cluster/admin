@@ -192,6 +192,7 @@ function is_kerberized {
 function cluster_exists {
   # Just use the first node as an indicator...
   if [[ ! -e "$NODES_DIR/${NODE_PREFIX}1" ]]; then
+    echo "HTH cluster_exists return 1"	  
     return 1
   fi
 }
@@ -310,6 +311,7 @@ function create_cluster {
 }
 
 function start_cluster {
+  echo "HTH ENTER start_cluster"	
   if ! cluster_exists; then
     echo "The cluster must be created first"
     return 1
@@ -329,6 +331,7 @@ function start_cluster {
 
   if [ ${#SUPPORTED_SERVICES[@]} -gt 0 ]; then
     for SERVICE in ${SUPPORTED_SERVICES[@]-}; do
+      echo "HTH SERVICE IS $SERVICE"	    
       # If all of the following are true, we wait for ntp to sync before proceeding:
       #
       # 1. Kudu is being started
@@ -350,6 +353,7 @@ function start_cluster {
           fi
         fi
       fi
+      echo "HTH TO START SERVICE $SERVICE"
       start $SERVICE
     done
 
@@ -400,6 +404,7 @@ function chmod_hdfs_root {
 }
 
 function exec_init_script {
+  echo "HTH ENTER INTO exec_init_script: $1 $2"	
   local SCRIPT_NAME="$1"
   shift
   local CMD="$1"
@@ -407,6 +412,7 @@ function exec_init_script {
   local PIDS=()
   for SCRIPT in $(find "$NODES_DIR" -path "*/$NODE_PREFIX*/etc/init.d/$SCRIPT_NAME" \
       $FIND_EXECUTABLE_FILTER -type f); do
+    echo "HTH SCRIPT IS $SCRIPT"
     if "$SCRIPT" status &>/dev/null; then
       RUNNING=true
     else

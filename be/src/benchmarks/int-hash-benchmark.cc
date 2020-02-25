@@ -22,7 +22,9 @@
 #include <memory>
 #include <vector>
 
+#ifndef __aarch64__
 #include <immintrin.h>
+#endif
 
 #include "util/benchmark.h"
 #include "util/cpu-info.h"
@@ -100,7 +102,9 @@ inline void MultiplyShift(uint32_t* x) {
 //
 // TODO: Add the Intel intrinsics used in this function and the other functions in this
 // file to sse-util.h so that these functions can be inlined.
+#ifndef __aarch64__
 inline void MultiplyShift128(__m128i* x) __attribute__((__target__("sse4.1")));
+#endif
 inline void MultiplyShift128(__m128i* x) {
   const __m128i m = _mm_set1_epi32(0x61eaf8e9);
   _mm_storeu_si128(x, _mm_mullo_epi32(_mm_loadu_si128(x), m));
@@ -109,12 +113,13 @@ inline void MultiplyShift128(__m128i* x) {
 // Like MultiplyShift, but using AVX2's 256-bit SIMD registers to do 8 at once.
 //
 // Not inline, because it degrades the performance for unknown reasons.
+#ifndef __aarch64__
 void MultiplyShift256(__m256i* x) __attribute__((__target__("avx2")));
 void MultiplyShift256(__m256i* x) {
   const __m256i m = _mm256_set1_epi32(0x61eaf8e9);
   _mm256_storeu_si256(x, _mm256_mullo_epi32(_mm256_loadu_si256(x), m));
 }
-
+#endif
 // 2-independent hashing. M. Dietzfelbinger, "Universal hashing and k-wise independent
 // random variables via integer arithmetic without primes"
 inline void MultiplyAddShift(uint32_t* x) {
@@ -123,6 +128,7 @@ inline void MultiplyAddShift(uint32_t* x) {
 }
 
 // Like MultiplyAddShift, but using SSE's 128-bit SIMD registers to do 4 at once.
+#ifndef __aarch64__
 inline void MultiplyAddShift128(__m128i* x) __attribute__((__target__("sse4.1")));
 inline void MultiplyAddShift128(__m128i* x) {
   const auto m = _mm_set1_epi64x(0xa1f1bd3e020b4be0ull),
@@ -155,6 +161,7 @@ inline void MultiplyAddShift256(__m256i* x) {
   __m256i prod32hard = _mm256_unpackhi_epi32(prod64_evens, prod64_odds);
   _mm256_storeu_si256(x, _mm256_add_epi32(prod32easy, prod32hard));
 }
+#endif
 
 // From http://web.archive.org/web/20071223173210/http://www.concentric.net/~Ttwang/tech/inthash.htm:
 inline void Jenkins1(int32_t* x) {
@@ -207,6 +214,7 @@ inline void Zobrist(uint32_t* key) {
       ^ ZOBRIST_DATA[2][key_chars[2]] ^ ZOBRIST_DATA[3][key_chars[3]];
 }
 
+#ifndef __aarch64__
 // Like Zobrist, but uses AVX2's "gather" primatives to hash 8 values at once.
 inline void Zobrist256gather(__m256i* key) __attribute__((__target__("avx2")));
 inline void Zobrist256gather(__m256i* key) {
@@ -241,7 +249,7 @@ inline void Zobrist256simple(uint32_t (*key)[8]) {
   auto k01 = _mm256_xor_si256(result0, result1), k23 = _mm256_xor_si256(result2, result3);
   _mm256_storeu_si256(reinterpret_cast<__m256i*>(*key), _mm256_xor_si256(k01, k23));
 }
-
+#endif
 // Perform one hash function the given number of times. This can sometimes auto-vectorize.
 //
 // TODO: We could also test the costs of running on non-contiguous uint32_t's. For
@@ -306,11 +314,12 @@ int main() {
     suite32x4.BENCH(uint32_t[4], (Multiple<CRC, 4>));
   }
   suite32x4.BENCH(uint32_t[4], (Multiple<MultiplyShift, 4>));
+#ifndef __aarch64__
   if (CpuInfo::IsSupported(CpuInfo::SSE4_1)) {
     suite32x4.BENCH(__m128i, MultiplyAddShift128);
     suite32x4.BENCH(__m128i, MultiplyShift128);
   }
-
+#endif
   cout << suite32x4.Measure() << endl;
 
   Benchmark suite32x8("32 x 8 -> 32 x 8");
@@ -319,13 +328,14 @@ int main() {
   suite32x8.BENCH(uint32_t[8], (Multiple<MultiplyAddShift, 8>));
   suite32x8.BENCH(uint32_t[8], (Multiple<CRC, 8>));
   suite32x8.BENCH(uint32_t[8], (Multiple<MultiplyShift, 8>));
+#ifndef __aarch64__
   if (CpuInfo::IsSupported(CpuInfo::AVX2)) {
     suite32x8.BENCH(uint32_t[8], Zobrist256simple);
     suite32x8.BENCH(__m256i, Zobrist256gather);
     suite32x8.BENCH(__m256i, MultiplyAddShift256);
     suite32x8.BENCH(__m256i, MultiplyShift256);
   }
-
+#endif
   cout << suite32x8.Measure() << endl;
 
 #undef BENCH

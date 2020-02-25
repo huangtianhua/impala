@@ -20,7 +20,12 @@
 
 #include "kudu/util/memory/memory.h"
 
+#if defined(__aarch64__)
+#define _mm_free(p) free(p)
+#define _mm_malloc(a, b) malloc(a)
+#else
 #include <mm_malloc.h>
+#endif
 
 #include <algorithm>
 #include <cstdlib>

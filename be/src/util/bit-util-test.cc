@@ -31,6 +31,9 @@
 
 #include "common/names.h"
 #include "runtime/multi-precision.h"
+#ifdef __aarch64__
+#include <arm_neon.h>
+#endif
 
 namespace impala {
 
@@ -124,6 +127,16 @@ TEST(BitUtil, TrailingBits) {
   EXPECT_EQ(BitUtil::TrailingBits(1ULL << 63, 64), 1ULL << 63);
 }
 
+#ifdef __aarch64__
+#define int8x16_to_8x8x2(v) ((int8x8x2_t) { vget_low_s8(v), vget_high_s8(v) })
+const int8x16_t mask128i = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+inline void SimdByteSwap::ByteSwap128(const uint8_t* src, uint8_t* dst) {
+  int8x16_t data = vreinterpretq_s8_s32(vld1q_s32((int32_t *)(src)));
+  int8x16_t results = vcombine_s8(vtbl2_s8(int8x16_to_8x8x2(data),vget_low_s8(mask128i)),vtbl2_s8(int8x16_to_8x8x2(data),vget_high_s8(mask128i)));
+  vst1q_s32((int32_t*) dst, vreinterpretq_s32_s8(results));
+}
+#endif
 // Test different SIMD functionality units with an input/output buffer.
 // CpuFlag parameter indicates SIMD routine to be tested:
 //   CpuInfo::SSSE3 for ByteSwapSSE_Unit;
@@ -131,6 +144,12 @@ TEST(BitUtil, TrailingBits) {
 void TestByteSwapSimd_Unit(const int64_t CpuFlag) {
   void (*bswap_fptr)(const uint8_t* src, uint8_t* dst) = NULL;
   int buf_size = 0;
+#ifdef __aarch64__
+  if (CpuFlag == CpuInfo::SSSE3) {
+    buf_size = 16;
+    bswap_fptr = SimdByteSwap::ByteSwap128;
+  }
+#else
   if (CpuFlag == CpuInfo::SSSE3) {
     buf_size = 16;
     bswap_fptr = SimdByteSwap::ByteSwap128;
@@ -140,7 +159,7 @@ void TestByteSwapSimd_Unit(const int64_t CpuFlag) {
     buf_size = 32;
     bswap_fptr = SimdByteSwap::ByteSwap256;
   }
-
+#endif
   DCHECK(bswap_fptr != NULL);
   // IMPALA-4058: test that bswap_fptr works when it reads to o writes from memory with
   // any alignment.
@@ -307,6 +326,7 @@ TEST(BitUtil, RoundUpDown) {
 // Prevent inlining so that the compiler can't optimize out the check.
 __attribute__((noinline))
 int CpuInfoIsSupportedHoistHelper(int64_t cpu_info_flag, int arg) {
+#ifndef __aarch64__
   if (CpuInfo::IsSupported(cpu_info_flag)) {
     // Assembly follows similar pattern to popcnt instruction but executes
     // illegal instruction.
@@ -316,6 +336,9 @@ int CpuInfoIsSupportedHoistHelper(int64_t cpu_info_flag, int arg) {
   } else {
     return 12345;
   }
+#else
+  return 12345;
+#endif
 }
 
 // Regression test for IMPALA-6882 - make sure illegal instruction isn't hoisted out of

@@ -29,7 +29,12 @@ def get_set_of_tests(unified_binary, filters):
     if filters is not None:
         command.append("--gtest_filter={0}".format(filters))
     p = subprocess.Popen(command, stdout=subprocess.PIPE)
+    print("HTH after Popen")
+    #from rpdb import Rpdb
+    #pdb = Rpdb()
+    #pdb.set_trace()
     out, err = p.communicate()
+    print("HTH after communicate")
     if p.returncode != 0:
         print("FAILED: Unified backend test executable returned an error when trying\n"
               "        to list tests.")
@@ -57,11 +62,14 @@ def main():
                       help="Aggregation of all gtest filters")
     parser.add_option("-b", "--unified_binary", dest="unified_binary",
                       help="Filename for the unified test binary")
+    print("HTH enter main")
     options, args = parser.parse_args()
     without_filter = get_set_of_tests(options.unified_binary, None)
+    print("HTH after get without_filter")
     with_filter = get_set_of_tests(options.unified_binary, options.filters)
-
+    print("HTH after get with_filter")
     assert with_filter.issubset(without_filter)
+    print("HTH after assert")
     if without_filter != with_filter:
         print("FAILED: The unified backend test executable contains tests that are\n"
               "        missing from the CMake test filters specified via the\n"
